@@ -99,6 +99,7 @@ defaultBotSettings =
     , botStepDelayMilliseconds = 2000
     , oreHoldMaxPercent = 99
     , selectInstancePilotName = Nothing
+    , unloadContainerName = Nothing
     }
 
 
@@ -136,6 +137,9 @@ parseBotSettings =
          , ( "bot-step-delay"
            , AppSettings.valueTypeInteger (\delay settings -> { settings | botStepDelayMilliseconds = delay })
            )
+        , ( "unload-container-name"
+          , AppSettings.valueTypeString (\containerName -> \settings -> { settings | unloadContainerName = Just containerName })
+          )
          ]
             |> Dict.fromList
         )
@@ -158,6 +162,7 @@ type alias BotSettings =
     , botStepDelayMilliseconds : Int
     , oreHoldMaxPercent : Int
     , selectInstancePilotName : Maybe String
+    , unloadContainerName : Maybe String
     }
 
 
@@ -446,6 +451,7 @@ inSpaceWithOreHoldSelected context seeUndockingComplete inventoryWindowWithOreHo
                                                         Just inactiveModule ->
                                                             describeBranch "I see an inactive mining module. Activate it."
                                                                 (clickModuleButtonButWaitIfClickedInPreviousStep context inactiveModule)
+                                                    --           Should also stop the ship from moving
                                                     )
                                                 )
                                 )
@@ -1144,6 +1150,13 @@ itemHangarFromInventoryWindow : EveOnline.ParseUserInterface.InventoryWindow -> 
 itemHangarFromInventoryWindow =
     .leftTreeEntries
         >> List.filter (.text >> String.toLower >> String.contains "item hangar")
+        >> List.head
+        >> Maybe.map .uiNode
+
+unloadContainerFromInventoryWindow : EveOnline.ParseUserInterface.InventoryWindow -> Maybe UIElement
+unloadContaierFromInventoryWindow =
+    .leftTreeEntries
+        >> List.filter (.text >> String.toLower >> String.contains context.eventContext.appSettings.unloadContainerName)
         >> List.head
         >> Maybe.map .uiNode
 
